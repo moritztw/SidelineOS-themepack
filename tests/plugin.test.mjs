@@ -40,7 +40,7 @@ const GUELTIGE_ICONS = new Set([
   'puzzle',
 ]);
 
-const ERLAUBTE_THEME_TOKENS = new Set([
+const ALLE_ERFORDERLICHEN_TOKENS = [
   '--sl-color-scheme',
   '--sl-bg-canvas',
   '--sl-bg-topbar',
@@ -60,10 +60,33 @@ const ERLAUBTE_THEME_TOKENS = new Set([
   '--sl-success',
   '--sl-success-text',
   '--sl-warning-text',
-]);
+];
 
+const ERLAUBTE_THEME_TOKENS = new Set(ALLE_ERFORDERLICHEN_TOKENS);
 const THEME_SLUG_REGEX = /^[a-z0-9](?:[a-z0-9-]{0,46}[a-z0-9])?$/;
 const HEX_REGEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
+
+function relativeLuminanz(hex) {
+  const clean = hex.replace('#', '');
+  const expanded =
+    clean.length === 3
+      ? clean
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : clean.slice(0, 6);
+  const kanal = (idx) => {
+    const v = Number.parseInt(expanded.slice(idx, idx + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * kanal(0) + 0.7152 * kanal(2) + 0.0722 * kanal(4);
+}
+
+function kontrast(hexA, hexB) {
+  const l1 = relativeLuminanz(hexA);
+  const l2 = relativeLuminanz(hexB);
+  return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
 
 test('plugin.manifest.json erfüllt alle Validierungsregeln von SidelineOS-Core (dev)', async () => {
   const raw = await fs.readFile(path.join(ROOT_DIR, 'plugin.manifest.json'), 'utf8');
@@ -92,12 +115,12 @@ test('plugin.manifest.json erfüllt alle Validierungsregeln von SidelineOS-Core 
   );
 });
 
-test('Alle deklarierten Theme-Presets erfüllen Token-Allowlist, Limit und Slug-Regeln', async () => {
+test('Alle Theme-Presets definieren alle 19 Tokens vollständig und bestehen WCAG AA Kontrast-Checks', async () => {
   const raw = await fs.readFile(path.join(ROOT_DIR, 'plugin.manifest.json'), 'utf8');
   const manifest = JSON.parse(raw);
 
   assert.ok(Array.isArray(manifest.themes), 'manifest.themes muss ein Array sein');
-  assert.ok(manifest.themes.length >= 1, 'Mindestens ein Theme-Preset erforderlich');
+  assert.ok(manifest.themes.length >= 4, 'Kuratiertes ThemePack braucht mind. 4 Presets');
   assert.ok(manifest.themes.length <= 20, 'Maximal 20 Presets pro Plugin erlaubt');
 
   const geseheneIds = new Set();
@@ -110,12 +133,58 @@ test('Alle deklarierten Theme-Presets erfüllen Token-Allowlist, Limit und Slug-
     assert.ok(preset.colorScheme === 'dark' || preset.colorScheme === 'light');
     assert.equal(typeof preset.tokens, 'object');
 
+    for (const token of ALLE_ERFORDERLICHEN_TOKENS) {
+      assert.ok(
+        Object.hasOwn(preset.tokens, token),
+        `Preset "${preset.id}" fehlt Token "${token}"`
+      );
+    }
+
     for (const [token, wert] of Object.entries(preset.tokens)) {
       assert.ok(ERLAUBTE_THEME_TOKENS.has(token), `Unbekannter CSS-Token: ${token}`);
       if (token === '--sl-color-scheme') {
-        assert.ok(wert === 'dark' || wert === 'light', `Ungültiges color-scheme: ${wert}`);
+        assert.equal(wert, preset.colorScheme, `--sl-color-scheme muss colorScheme entsprechen (${preset.id})`);
       } else {
         assert.match(String(wert), HEX_REGEX, `Ungültiger Hex-Wert für ${token}: ${wert}`);
+      }
+    }
+
+    const t = preset.tokens;
+    const flaechen = [t['--sl-bg-canvas'], t['--sl-bg-surface'], t['--sl-bg-topbar'], t['--sl-bg-elevated']];
+    for (const bg of flaechen) {
+      assert.ok(
+        kontrast(t['--sl-text-heading'], bg) >= 7.0,
+        `${preset.id}: Heading-Kontrast auf ${bg} zu niedrig`
+      );
+      assert.ok(
+        kontrast(t['--sl-text-primary'], bg) >= 7.0,
+        `${preset.id}: Primary-Kontrast auf ${bg} zu niedrig`
+      );
+      assert.ok(
+        kontrast(t['--sl-text-muted'], bg) >= 4.5,
+        `${preset.id}: Muted-Kontrast auf ${bg} < 4.5:1`
+      );
+      assert.ok(
+        kontrast(t['--sl-text-subtle'], bg) >= 4.5,
+        `${preset.id}: Subtle-Kontrast auf ${bg} < 4.5:1`
+      );
+    }
+
+    assert.ok(
+      kontrast(t['--sl-accent-contrast'], t['--sl-accent']) >= 4.5,
+      `${preset.id}: Accent-Button-Kontrast < 4.5:1`
+    );
+    assert.ok(
+      kontrast(t['--sl-accent-contrast'], t['--sl-accent-hover']) >= 4.5,
+      `${preset.id}: Accent-Hover-Kontrast < 4.5:1`
+    );
+
+    for (const statusToken of ['--sl-danger-text', '--sl-success-text', '--sl-warning-text']) {
+      for (const bg of [t['--sl-bg-canvas'], t['--sl-bg-surface']]) {
+        assert.ok(
+          kontrast(t[statusToken], bg) >= 4.5,
+          `${preset.id}: ${statusToken} auf ${bg} < 4.5:1`
+        );
       }
     }
   }
@@ -123,6 +192,10 @@ test('Alle deklarierten Theme-Presets erfüllen Token-Allowlist, Limit und Slug-
   assert.ok(
     manifest.themes.some((preset) => preset.colorScheme === 'light'),
     'Mindestens ein Light-Theme muss enthalten sein'
+  );
+  assert.ok(
+    manifest.themes.some((preset) => preset.colorScheme === 'dark'),
+    'Mindestens ein Dark-Theme muss enthalten sein'
   );
 });
 

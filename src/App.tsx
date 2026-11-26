@@ -1,14 +1,26 @@
 import { useEffect, useState } from 'react';
 import type { PluginSettingsKontext, PluginThemePreset } from '@sidelineos/plugin-sdk';
-import { CORE_STANDARD_THEME_PRESET, SIDELINE_STANDARD_THEME_TOKENS } from './dev/sdkShim.ts';
+import {
+  CORE_STANDARD_THEME_PRESET,
+  SIDELINE_STANDARD_THEME_TOKENS,
+  berechneRelativeLuminanz,
+  ermittleTeamAkzentTokens,
+} from './dev/sdkShim.ts';
 import themePlugin from './client.tsx';
 
 const PREVIEW_TEAM_COLORS = [
-  { label: 'Core Amber', hex: '#F59E0B' },
-  { label: 'Team Blue', hex: '#2563EB' },
-  { label: 'Turf Green', hex: '#16A34A' },
-  { label: 'Crimson', hex: '#DC2626' },
+  { label: 'Core Amber (#F59E0B)', hex: '#F59E0B' },
+  { label: 'Team Blue (#2563EB)', hex: '#2563EB' },
+  { label: 'Turf Green (#16A34A)', hex: '#16A34A' },
+  { label: 'Crimson (#DC2626)', hex: '#DC2626' },
 ];
+
+function kontrastVerhaeltnis(hexA: string, hexB: string): string {
+  const l1 = berechneRelativeLuminanz(hexA);
+  const l2 = berechneRelativeLuminanz(hexB);
+  const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  return `${ratio.toFixed(2)}:1`;
+}
 
 export default function App() {
   const presets = themePlugin.themes ?? [];
@@ -18,25 +30,26 @@ export default function App() {
   const activePreset: PluginThemePreset =
     presets.find((p) => p.id === selectedId) ?? CORE_STANDARD_THEME_PRESET;
 
+  const mergedTokens: Record<string, string> = {
+    ...SIDELINE_STANDARD_THEME_TOKENS,
+    ...activePreset.tokens,
+  };
+
+  if (!activePreset.overrideTeamAccent && selectedId !== 'default') {
+    const teamTokens = ermittleTeamAkzentTokens(teamAccent);
+    if (teamTokens) {
+      Object.assign(mergedTokens, teamTokens);
+    }
+  }
+
   useEffect(() => {
     const root = document.documentElement;
-    const merged: Record<string, string> = {
-      ...SIDELINE_STANDARD_THEME_TOKENS,
-      ...activePreset.tokens,
-    };
-
-    if (!activePreset.overrideTeamAccent && selectedId !== 'default') {
-      merged['--sl-accent'] = teamAccent;
-      merged['--sl-accent-hover'] = teamAccent;
-      merged['--sl-accent-contrast'] = '#FFFFFF';
-    }
-
     root.classList.remove('dark', 'light');
     root.classList.add(activePreset.colorScheme);
-    for (const [token, value] of Object.entries(merged)) {
+    for (const [token, value] of Object.entries(mergedTokens)) {
       root.style.setProperty(token, value);
     }
-  }, [activePreset, selectedId, teamAccent]);
+  }, [activePreset, mergedTokens]);
 
   const settingsCtx: PluginSettingsKontext = {
     team: {
@@ -82,7 +95,7 @@ export default function App() {
             </span>
             <span className="text-sl-border-strong">/</span>
             <span className="text-xs font-medium text-sl-muted">
-              ThemePack Studio (Phase 0 Preview)
+              ThemePack Studio
             </span>
           </div>
 
@@ -122,8 +135,8 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-6 px-6 py-6">
-        <section className="rounded-lg border border-sl-border bg-sl-surface p-5 space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+        <section className="space-y-4 rounded-lg border border-sl-border bg-sl-surface p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h1 className="text-base font-semibold text-sl-heading">
                 {activePreset.name}
@@ -132,17 +145,58 @@ export default function App() {
                 {activePreset.beschreibung ?? 'Core Standard-Erscheinungsbild'}
               </p>
             </div>
-            <button
-              type="button"
-              className="rounded-md bg-sl-accent px-3.5 py-1.5 text-xs font-semibold text-sl-accent-contrast transition-colors hover:bg-sl-accent-hover"
-            >
-              Beispiel-Aktion
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                className="rounded-md border border-sl-border bg-sl-elevated px-3 py-1.5 text-xs font-medium text-sl-primary transition-colors hover:border-sl-border-strong"
+              >
+                Sekundär
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-sl-accent px-3.5 py-1.5 text-xs font-semibold text-sl-accent-contrast transition-colors hover:bg-sl-accent-hover"
+              >
+                Primär-Aktion
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3 text-xs">
-            <span className="text-sl-success-text">Status: Gültige Token-Konfiguration</span>
-            <span className="text-sl-warning-text">Hinweis: Phase 0 Grundgerüst</span>
-            <span className="text-sl-danger-text">Fehler-Kontrast-Check</span>
+
+          <div className="grid grid-cols-2 gap-3 border-t border-sl-border pt-3 text-xs sm:grid-cols-4">
+            <div className="rounded border border-sl-border bg-sl-canvas px-3 py-2">
+              <div className="text-sl-subtle">Heading / Surface</div>
+              <div className="font-mono font-semibold text-sl-heading">
+                {kontrastVerhaeltnis(
+                  mergedTokens['--sl-text-heading'],
+                  mergedTokens['--sl-bg-surface']
+                )}
+              </div>
+            </div>
+            <div className="rounded border border-sl-border bg-sl-canvas px-3 py-2">
+              <div className="text-sl-subtle">Muted / Canvas</div>
+              <div className="font-mono font-semibold text-sl-primary">
+                {kontrastVerhaeltnis(
+                  mergedTokens['--sl-text-muted'],
+                  mergedTokens['--sl-bg-canvas']
+                )}
+              </div>
+            </div>
+            <div className="rounded border border-sl-border bg-sl-canvas px-3 py-2">
+              <div className="text-sl-subtle">Accent Button</div>
+              <div className="font-mono font-semibold text-sl-primary">
+                {kontrastVerhaeltnis(
+                  mergedTokens['--sl-accent-contrast'],
+                  mergedTokens['--sl-accent']
+                )}
+              </div>
+            </div>
+            <div className="rounded border border-sl-border bg-sl-canvas px-3 py-2">
+              <div className="text-sl-subtle">Status-Kontrast</div>
+              <div className="flex items-center gap-2 font-medium">
+                <span className="text-sl-success-text">OK</span>
+                <span className="text-sl-warning-text">Warn</span>
+                <span className="text-sl-danger-text">Err</span>
+              </div>
+            </div>
           </div>
         </section>
 

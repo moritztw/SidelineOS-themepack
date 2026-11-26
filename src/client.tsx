@@ -12,22 +12,28 @@ const WOERTERBUCH: SprachWoerterbuecher = {
   de: {
     heading: 'ThemePack Katalog',
     subtitle:
-      'Enthaltene Themes stehen direkt oben in den Konto- bzw. Instanz-Theme-Einstellungen zur Auswahl bereit.',
+      'Alle enthaltenen Themes stehen direkt oben in den Konto- bzw. Instanz-Theme-Einstellungen zur Auswahl bereit.',
     modeLight: 'Hell',
     modeDark: 'Dunkel',
     accentTeam: 'Team-Akzent aktiv',
-    accentFixed: 'Eigener Akzent',
-    countLabel: 'Presets geladen',
+    accentFixed: 'Fester Preset-Akzent',
+    countLabel: 'Presets aktiv',
+    sampleTitle: 'Taktik-Übersicht',
+    sampleBody: 'Playbook & Film Room',
+    sampleCta: 'Öffnen',
   },
   en: {
     heading: 'ThemePack Catalog',
     subtitle:
-      'Included themes are available directly in the account and instance theme selectors above.',
+      'All included themes are directly selectable in the account and instance theme selectors above.',
     modeLight: 'Light',
     modeDark: 'Dark',
     accentTeam: 'Follows team accent',
     accentFixed: 'Fixed preset accent',
-    countLabel: 'Presets loaded',
+    countLabel: 'Presets active',
+    sampleTitle: 'Tactics Overview',
+    sampleBody: 'Playbook & Film Room',
+    sampleCta: 'Open',
   },
 };
 
@@ -55,11 +61,15 @@ function ThemePackSettingsPanel({ ctx }: { ctx: PluginSettingsKontext }) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {THEMEPACK_PRESETS.map((preset) => {
           const canvas = preset.tokens['--sl-bg-canvas'] ?? '#0B0E11';
+          const topbar = preset.tokens['--sl-bg-topbar'] ?? '#0F1318';
           const surface = preset.tokens['--sl-bg-surface'] ?? '#13171D';
           const border = preset.tokens['--sl-border'] ?? '#232933';
           const heading = preset.tokens['--sl-text-heading'] ?? '#FFFFFF';
           const muted = preset.tokens['--sl-text-muted'] ?? '#8B949E';
           const accent = preset.tokens['--sl-accent'] ?? '#F59E0B';
+          const accentContrast = preset.tokens['--sl-accent-contrast'] ?? '#0B0E11';
+
+          const swatches = [canvas, surface, border, heading, accent];
 
           return (
             <article
@@ -78,27 +88,52 @@ function ThemePackSettingsPanel({ ctx }: { ctx: PluginSettingsKontext }) {
                 )}
               </div>
 
-              {/* Mini-UI-Farbvorschau direkt mit den Preset-Hexwerten */}
-              <div
-                className="space-y-2 rounded-md border p-2.5"
-                style={{ backgroundColor: canvas, borderColor: border }}
-              >
+              {/* Mini-UI-Vorschau direkt mit den Preset-Tokens */}
+              <div className="space-y-2">
                 <div
-                  className="flex items-center justify-between rounded border px-2.5 py-1.5"
-                  style={{ backgroundColor: surface, borderColor: border }}
+                  className="overflow-hidden rounded-md border"
+                  style={{ backgroundColor: canvas, borderColor: border }}
                 >
-                  <span className="text-[11px] font-semibold" style={{ color: heading }}>
-                    SidelineOS
-                  </span>
-                  <span
-                    className="h-2.5 w-6 rounded-sm"
-                    style={{ backgroundColor: accent }}
-                    aria-hidden="true"
-                  />
+                  <div
+                    className="flex items-center justify-between border-b px-2.5 py-1.5"
+                    style={{ backgroundColor: topbar, borderColor: border }}
+                  >
+                    <span className="text-[11px] font-semibold" style={{ color: heading }}>
+                      SidelineOS
+                    </span>
+                    <span
+                      className="rounded px-1.5 py-0.5 text-[9px] font-semibold"
+                      style={{ backgroundColor: accent, color: accentContrast }}
+                    >
+                      {t('sampleCta')}
+                    </span>
+                  </div>
+                  <div className="p-2">
+                    <div
+                      className="rounded border px-2 py-1.5"
+                      style={{ backgroundColor: surface, borderColor: border }}
+                    >
+                      <div className="text-[11px] font-medium" style={{ color: heading }}>
+                        {t('sampleTitle')}
+                      </div>
+                      <div className="text-[10px]" style={{ color: muted }}>
+                        {t('sampleBody')}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between px-1 text-[10px]" style={{ color: muted }}>
-                  <span className="font-mono">{preset.id}</span>
-                  <span>
+
+                <div className="flex items-center justify-between gap-2 px-0.5">
+                  <div className="flex items-center gap-1" aria-hidden="true">
+                    {swatches.map((hex, idx) => (
+                      <span
+                        key={`${preset.id}-swatch-${idx}`}
+                        className="h-3 w-3 rounded-sm border"
+                        style={{ backgroundColor: hex, borderColor: border }}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-sl-subtle">
                     {preset.overrideTeamAccent ? t('accentFixed') : t('accentTeam')}
                   </span>
                 </div>
