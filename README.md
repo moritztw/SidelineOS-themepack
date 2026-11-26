@@ -1,11 +1,27 @@
-<div align="center">
+# SidelineOS-themepack
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Theme-Pack-Plugin für [SidelineOS-Core](https://github.com/moritztw/SidelineOS-core) auf Basis von `@sidelineos/plugin-sdk` (`1.0`).
 
-  <h1>Built with AI Studio</h2>
+Stellt kuratierte Gestaltungs-Themes (Light, Outdoor & Editorial) direkt über die deklarative Theme-API (`manifest.themes`) und `hideHubTile: true` bereit.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Entwicklung
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+```bash
+npm install --legacy-peer-deps
+npm run lint
+npm test
+npm run pack:plugin
+```
 
-</div>
+Lokale Vorschau im Browser (Port 3000):
+
+```bash
+npm run dev
+```
+
+## Release-Artefakte (`sideline-plugin-v1`)
+
+Beim Erstellen eines Git-Tags `v*` erzeugt GitHub Actions automatisch:
+- `sideline-plugin-v1.tar.gz` (`plugin.manifest.json` + `dist/client.js`)
+- `sideline-plugin-v1.tar.gz.sha256`
+- `plugin.manifest.json`

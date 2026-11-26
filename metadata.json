@@ -1,0 +1,6 @@
+{
+  "name": "SidelineOS-themepack",
+  "description": "Kuratierte Theme-Presets (Light, Outdoor und Editorial) für SidelineOS-Core.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

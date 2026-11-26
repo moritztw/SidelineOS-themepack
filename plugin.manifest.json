@@ -1,0 +1,60 @@
+{
+  "id": "themepack",
+  "name": "ThemePack",
+  "kurzbeschreibung": "Kuratierte Gestaltungs-Themes (Light, Outdoor & Editorial) für SidelineOS-Core.",
+  "version": "0.1.0",
+  "sdkVersion": "1.0",
+  "minCoreVersion": "0.1.0-beta.1",
+  "autor": "moritztw",
+  "repositoryUrl": "https://github.com/moritztw/SidelineOS-themepack",
+  "icon": "layers",
+  "status": "AKTIV",
+  "standardAktiviert": true,
+  "hideHubTile": true,
+  "permissions": [],
+  "dbPrefix": "mod_themepack_",
+  "settingsAnker": {
+    "user": [
+      {
+        "id": "themepack-katalog",
+        "label": "ThemePack Vorschau"
+      }
+    ],
+    "sysadmin": [
+      {
+        "id": "themepack-katalog",
+        "label": "ThemePack Vorschau"
+      }
+    ]
+  },
+  "themes": [
+    {
+      "id": "sideline-daylight",
+      "name": "Sideline Daylight (Hell)",
+      "beschreibung": "Kontrastreiches Light-Theme für helle Räume und direkte Sonne am Spielfeldrand.",
+      "colorScheme": "light",
+      "overrideTeamAccent": false,
+      "tokens": {
+        "--sl-color-scheme": "light",
+        "--sl-bg-canvas": "#F4F6F9",
+        "--sl-bg-topbar": "#E9EEF5",
+        "--sl-bg-surface": "#FFFFFF",
+        "--sl-bg-elevated": "#E2E8F0",
+        "--sl-border": "#CBD5E1",
+        "--sl-border-strong": "#94A3B8",
+        "--sl-text-heading": "#0F172A",
+        "--sl-text-primary": "#1E293B",
+        "--sl-text-muted": "#475569",
+        "--sl-text-subtle": "#64748B",
+        "--sl-accent": "#D97706",
+        "--sl-accent-hover": "#B45309",
+        "--sl-accent-contrast": "#FFFFFF",
+        "--sl-danger": "#DC2626",
+        "--sl-danger-text": "#B91C1C",
+        "--sl-success": "#16A34A",
+        "--sl-success-text": "#15803D",
+        "--sl-warning-text": "#B45309"
+      }
+    }
+  ]
+}
